@@ -17,18 +17,23 @@ var buildCmd = &cobra.Command{
 
 func build(cmd *cobra.Command, args []string) error {
 	workingDir := args[0]
-	// 1. install dependencies
-	pkg := packager.NPM{}
-	err := pkg.Install(cmd.Context(), packager.BuildContext{
+	bctx := packager.BuildContext{
 		WorkingDir: workingDir,
 		Clock:      chronos.DefaultClock,
 		Logger:     scribe.NewLogger(os.Stdout),
-	})
+	}
+	// 1. install dependencies
+	pkg := packager.NPM{}
+	err := pkg.Install(cmd.Context(), bctx)
 	if err != nil {
 		return err
 	}
 
 	// 2. build
+	err = pkg.Build(cmd.Context(), bctx)
+	if err != nil {
+		return err
+	}
 
 	// 3. add static files to base image
 
