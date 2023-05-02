@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/paketo-buildpacks/packit/pexec"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 )
@@ -17,7 +16,7 @@ func (*NPM) Install(_ context.Context, bctx BuildContext) error {
 
 	// assemble the information our executable needs
 	exec := pexec.NewExecutable("npm")
-	args := []string{"ci", "--include=dev", "--unsafe-perm", "--cache", filepath.Join(bctx.WorkingDir, ".cache")}
+	args := []string{"ci", "--include=dev", "--unsafe-perm", "--cache", bctx.CacheDir}
 	bctx.Logger.Subprocess("Running 'npm %s'", strings.Join(args, " "))
 	// shell out
 	duration, err := bctx.Clock.Measure(func() error {
@@ -40,7 +39,7 @@ func (*NPM) Install(_ context.Context, bctx BuildContext) error {
 	return nil
 }
 
-func (*NPM) Build(ctx context.Context, bctx BuildContext) error {
+func (*NPM) Build(_ context.Context, bctx BuildContext) error {
 	bctx.Logger.Process("Executing build process")
 
 	// assemble the information our executable needs

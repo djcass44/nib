@@ -13,6 +13,7 @@ type PackageManager interface {
 
 type BuildContext struct {
 	WorkingDir string
+	CacheDir   string
 
 	Clock  chronos.Clock
 	Logger scribe.Logger
