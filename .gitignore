@@ -2,3 +2,5 @@
 .vscode
 .fleet
 *.iml
+.cache/
+node_modules/
