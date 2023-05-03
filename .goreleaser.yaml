@@ -26,7 +26,7 @@ archives:
     files:
       - LICENCE
 kos:
-  - id: srv
+  - repository: ghcr.io/djcass44/nib/srv
     build: srv
     working_dir: srv
     main: ./cmd/srv/...
