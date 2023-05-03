@@ -55,7 +55,7 @@ func tarDir(appPath string, platform *v1.Platform) (*bytes.Buffer, error) {
 		}
 	}
 
-	if err := walkRecursive(tw, appPath, "/nip-app", v1.Time{}, platform); err != nil {
+	if err := walkRecursive(tw, appPath, "/var/run/nip", v1.Time{}, platform); err != nil {
 		return nil, err
 	}
 	return buf, nil

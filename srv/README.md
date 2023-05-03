@@ -12,11 +12,8 @@ It also uses the [AutoKubeOps Serverless Framework](https://gitlab.com/autokubeo
 
 ## Configuration
 
-`SRV_STATIC_DIR`: path to the static files
-
-`SRV_DOT_ENV`: path to the `.env` file
-
-`SRV_ENV_FILE`: name of the generated `.js` file to be placed within `SRV_STATIC_DIR`
+* `NIP_DATA_PATH`: path to the static files
+* `NIP_ENV_FILE`: name of the generated `.js` file to be placed within `NIP_DATA_PATH`. Defaults to `env-config.js`
 
 ### Dotenv support
 
@@ -24,19 +21,18 @@ Srv has built in capability to generate runtime variables for Web applications.
 Any variables defined in a dotenv file that are found in the Srv environment will be imported at startup.
 
 1. Create a `.env` file containing key=value data for the environment variables you wish to use.
-   If you do not wish to provide a value, key= can be used.
+   If you do not wish to provide a default value, key= can be used.
     ```dotenv
     API_URL=https://example.org
     API_KEY=
     ```
-2. Enable the feature by setting `SRV_DOT_ENV` to the name of the file created above
-3. Consume the variables from your application
+2. Consume the variables from your application
     ```html
-	  <!DOCTYPE html>
+      <!DOCTYPE html>
     <html lang="en">
     <head>
         <script src="env-config.js"></script>
-   		<script src="index.js"></script>
+           <script src="index.js"></script>
         <title>Hello, World!</title>
     </head>
     </html>
@@ -48,11 +44,11 @@ Any variables defined in a dotenv file that are found in the Srv environment wil
    ```typescript
    // typescript declarations
    declare global {
-   	interface Window {
-   		_env_?: { 
-   			API_URL?: string; 
-   			API_KEY?: string; 
-   		}
-   	}
+       interface Window {
+           _env_?: { 
+               API_URL?: string; 
+               API_KEY?: string; 
+           }
+       }
    }
    ```

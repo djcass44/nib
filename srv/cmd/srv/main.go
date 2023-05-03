@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"github.com/djcass44/go-utils/logging"
 	"github.com/djcass44/nib/srv/internal/env"
 	"github.com/djcass44/nib/srv/pkg/dotenv"
@@ -13,17 +14,15 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"net/http"
+	"os"
 	"path/filepath"
 )
 
 type environment struct {
 	LogLevel int `split_words:"true"`
-	// StaticDir defines the location of your applications
+	// DataPath defines the location of your applications
 	// static files (required)
-	StaticDir string `split_words:"true" required:"true"`
-	// DotEnv is the path to the .env file that should
-	// be converted into an env-config.js file (optional)
-	DotEnv string `split_words:"true"`
+	DataPath string `split_words:"true" required:"true"`
 	// EnvFile is the name of the JS file created
 	// from the DotEnv file
 	EnvFile string `split_words:"true" default:"env-config.js"`
@@ -34,7 +33,7 @@ type environment struct {
 func main() {
 	// read environment
 	var e environment
-	envconfig.MustProcess("srv", &e)
+	envconfig.MustProcess("nip", &e)
 
 	zc := zap.NewProductionConfig()
 	zc.Level = zap.NewAtomicLevelAt(zapcore.Level(e.LogLevel * -1))
@@ -44,21 +43,25 @@ func main() {
 	// so that we serve what was set at build
 	// time
 	staticDir := env.GetFirst("", func(key string) string {
-		return e.StaticDir
+		return filepath.Clean(e.DataPath)
 	})
 
-	if e.DotEnv != "" {
+	var hasDotEnv bool
+	dotPath := filepath.Join(e.DataPath, ".env")
+	if _, err := os.Stat(dotPath); !errors.Is(err, os.ErrNotExist) {
+		log.Info("detected .env file")
+		hasDotEnv = true
+	}
+
+	if hasDotEnv {
 		// dotEnv configuration must be the last set value
 		// so that we allow the user to configure it
 		// at runtime
-		dotEnv := env.GetLast("", func(key string) string {
-			return e.DotEnv
-		})
 		envFile := env.GetLast("", func(key string) string {
 			return e.EnvFile
 		})
-		log.Info("parsing dotenv", "file", dotEnv)
-		if err := dotenv.NewReader(ctx, dotEnv, filepath.Join(staticDir, envFile)); err != nil {
+		log.Info("parsing dotenv", "file", dotPath)
+		if err := dotenv.NewReader(ctx, dotPath, filepath.Join(staticDir, envFile)); err != nil {
 			log.Error(err, "failed to configure - this may cause undefined behaviour", "file", envFile)
 		}
 	}
