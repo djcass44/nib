@@ -85,6 +85,6 @@ func Push(ctx context.Context, img v1.Image, dst string) error {
 	if err != nil {
 		return fmt.Errorf("digest: %w", err)
 	}
-	fmt.Println(ref.Context().Digest(d.String()))
+	fmt.Println(ref.String() + "@" + d.String())
 	return nil
 }

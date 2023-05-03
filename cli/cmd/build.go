@@ -21,6 +21,10 @@ var buildCmd = &cobra.Command{
 	RunE:  buildExec,
 }
 
+func init() {
+	buildCmd.Flags().StringSliceP(flagTag, "t", []string{"latest"}, "Which tags to use for the produced image instead of the default 'latest' tag")
+}
+
 func buildExec(cmd *cobra.Command, args []string) error {
 	workingDir := args[0]
 	cacheDir := os.Getenv(EnvCache)
@@ -62,13 +66,13 @@ func buildExec(cmd *cobra.Command, args []string) error {
 	// 4. add static files to base image
 	baseImage := os.Getenv(EnvBaseImage)
 	if baseImage == "" {
-		baseImage = "ghcr.io/djcass44/nib"
+		baseImage = "ghcr.io/djcass44/nib/srv"
 	}
 	img, err := build.Append(cmd.Context(), appPath, baseImage, platform)
 	if err != nil {
 		return err
 	}
-	tags := []string{"latest"}
+	tags, _ := cmd.Flags().GetStringSlice(flagTag)
 	for _, tag := range tags {
 		if err := build.Push(cmd.Context(), img, fmt.Sprintf("%s:%s", os.Getenv(EnvDockerRepo), tag)); err != nil {
 			return err
