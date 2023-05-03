@@ -1,7 +1,7 @@
 package cmd
 
 const (
-	EnvCache      = "NIP_CACHE"
-	EnvDockerRepo = "NIP_DOCKER_REPO"
-	EnvBaseImage  = "NIP_DEFAULT_BASE_IMAGE"
+	EnvCache      = "NIB_CACHE"
+	EnvDockerRepo = "NIB_DOCKER_REPO"
+	EnvBaseImage  = "NIB_DEFAULT_BASE_IMAGE"
 )

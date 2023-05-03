@@ -12,8 +12,8 @@ It also uses the [AutoKubeOps Serverless Framework](https://gitlab.com/autokubeo
 
 ## Configuration
 
-* `NIP_DATA_PATH`: path to the static files
-* `NIP_ENV_FILE`: name of the generated `.js` file to be placed within `NIP_DATA_PATH`. Defaults to `env-config.js`
+* `NIB_DATA_PATH`: path to the static files
+* `NIB_ENV_FILE`: name of the generated `.js` file to be placed within `NIB_DATA_PATH`. Defaults to `env-config.js`
 
 ### Dotenv support
 

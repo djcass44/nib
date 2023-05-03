@@ -24,7 +24,7 @@ func buildExec(cmd *cobra.Command, args []string) error {
 	workingDir := args[0]
 	cacheDir := os.Getenv(EnvCache)
 	if cacheDir == "" {
-		cacheDir = filepath.Join(os.TempDir(), ".nip-cache")
+		cacheDir = filepath.Join(os.TempDir(), ".nib-cache")
 	}
 
 	bctx := packager.BuildContext{

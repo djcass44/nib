@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-const nipDataPath = "/var/run/nip"
+const nibDataPath = "/var/run/nib"
 
 func Append(ctx context.Context, appPath, baseRef string, platform *v1.Platform) (v1.Image, error) {
 	// pull the base image
@@ -33,10 +33,10 @@ func Append(ctx context.Context, appPath, baseRef string, platform *v1.Platform)
 		{
 			Layer: layer,
 			History: v1.History{
-				Author:    "nip",
-				CreatedBy: "nip build",
+				Author:    "nib",
+				CreatedBy: "nib build",
 				Created:   v1.Time{},
-				Comment:   "nipdata contents, at $NIP_DATA_PATH",
+				Comment:   "nibdata contents, at $NIB_DATA_PATH",
 			},
 		},
 	}
@@ -52,12 +52,12 @@ func Append(ctx context.Context, appPath, baseRef string, platform *v1.Platform)
 	}
 	cfg = cfg.DeepCopy()
 	if platform.OS == "windows" {
-		cfg.Config.Env = append(cfg.Config.Env, "NIP_DATA_PATH=C:"+strings.ReplaceAll(nipDataPath, "/", `\`))
+		cfg.Config.Env = append(cfg.Config.Env, "NIB_DATA_PATH=C:"+strings.ReplaceAll(nibDataPath, "/", `\`))
 	} else {
-		cfg.Config.Env = append(cfg.Config.Env, "NIP_DATA_PATH="+nipDataPath)
+		cfg.Config.Env = append(cfg.Config.Env, "NIB_DATA_PATH="+nibDataPath)
 	}
-	cfg.Author = "github.com/djcass44/nip"
-	cfg.Config.WorkingDir = nipDataPath
+	cfg.Author = "github.com/djcass44/nib"
+	cfg.Config.WorkingDir = nibDataPath
 	if cfg.Config.Labels == nil {
 		cfg.Config.Labels = map[string]string{}
 	}

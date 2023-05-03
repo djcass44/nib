@@ -33,7 +33,7 @@ type environment struct {
 func main() {
 	// read environment
 	var e environment
-	envconfig.MustProcess("nip", &e)
+	envconfig.MustProcess("nib", &e)
 
 	zc := zap.NewProductionConfig()
 	zc.Level = zap.NewAtomicLevelAt(zapcore.Level(e.LogLevel * -1))
