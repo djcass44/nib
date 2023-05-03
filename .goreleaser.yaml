@@ -1,4 +1,5 @@
 project_name: nib
+# go build configuration
 builds:
   - id: cli
     env: [CGO_ENABLED=0]
@@ -13,11 +14,21 @@ builds:
     env: [CGO_ENABLED=0]
     binary: srv
     dir: srv
+    main: ./cmd/srv
     goos:
       - linux
     goarch:
       - amd64
       - arm64
+# verifiable builds
+gomod:
+  proxy: true
+  env:
+    - GOPROXY=https://prism.v2.dcas.dev/api/go,https://proxy.golang.org,direct
+    - GOSUMDB=sum.golang.org
+  mod: mod
+
+# generate archives for the CLI
 archives:
   - format: tar.gz
     builds:
@@ -25,6 +36,7 @@ archives:
     wrap_in_directory: false
     files:
       - LICENCE
+# generate container images
 kos:
   - repository: ghcr.io/djcass44/nib/srv
     build: srv
