@@ -1,0 +1,43 @@
+project_name: nib
+builds:
+  - id: cli
+    env: [CGO_ENABLED=0]
+    dir: cli
+    binary: nib
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+  - id: srv
+    env: [CGO_ENABLED=0]
+    binary: srv
+    dir: srv
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+archives:
+  - format: tar.gz
+    builds:
+      - cli
+    wrap_in_directory: false
+    files:
+      - LICENCE
+kos:
+  - id: srv
+    build: srv
+    working_dir: srv
+    main: ./cmd/srv/...
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    tags:
+      - latest
+      - "{{ .Tag }}
+    sbom: cyclonedx
+    ko_data_creation_time: ''
+    creation_time: ''
+    bare: true
+    preserve_import_paths: false
