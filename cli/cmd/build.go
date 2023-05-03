@@ -15,7 +15,8 @@ import (
 
 var buildCmd = &cobra.Command{
 	Use:   "build",
-	Short: "",
+	Short: "Build and publish container images from the given directory.",
+	Long:  "This sub-command builds the provided directory into static files, containerises them, and publishes them.",
 	Args:  cobra.ExactArgs(1),
 	RunE:  buildExec,
 }
@@ -61,7 +62,7 @@ func buildExec(cmd *cobra.Command, args []string) error {
 	// 4. add static files to base image
 	baseImage := os.Getenv(EnvBaseImage)
 	if baseImage == "" {
-		baseImage = "harbor.dcas.dev/public.ecr.aws/bitnami/nginx:1.23"
+		baseImage = "ghcr.io/djcass44/nib"
 	}
 	img, err := build.Append(cmd.Context(), appPath, baseImage, platform)
 	if err != nil {
