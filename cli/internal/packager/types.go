@@ -7,6 +7,7 @@ import (
 )
 
 type PackageManager interface {
+	Detect(ctx context.Context, bctx BuildContext) bool
 	Install(ctx context.Context, bctx BuildContext) error
 	Build(ctx context.Context, bctx BuildContext) error
 }
