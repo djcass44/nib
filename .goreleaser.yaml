@@ -38,7 +38,25 @@ archives:
       - LICENCE
 # generate container images
 kos:
-  - repository: ghcr.io/djcass44/nib/srv
+  - id: default
+    repository: ghcr.io/djcass44/nib/srv
+    build: srv
+    working_dir: srv
+    main: ./cmd/srv/...
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    tags:
+      - latest
+      - "{{ .Tag }}"
+    sbom: cyclonedx
+    ko_data_creation_time: ''
+    creation_time: ''
+    bare: true
+    preserve_import_paths: false
+  - id: debug
+    repository: ghcr.io/djcass44/nib/srv-debug
+    base_image: cgr.dev/chainguard/busybox
     build: srv
     working_dir: srv
     main: ./cmd/srv/...
