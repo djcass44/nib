@@ -25,6 +25,11 @@ func init() {
 	buildCmd.Flags().StringSliceP(flagTag, "t", []string{"latest"}, "Which tags to use for the produced image instead of the default 'latest' tag")
 }
 
+var buildEngines = []packager.PackageManager{
+	&packager.NPM{},
+	&packager.Yarn{},
+}
+
 func buildExec(cmd *cobra.Command, args []string) error {
 	workingDir := args[0]
 	cacheDir := os.Getenv(EnvCache)
@@ -39,7 +44,14 @@ func buildExec(cmd *cobra.Command, args []string) error {
 		Logger:     scribe.NewLogger(os.Stdout),
 	}
 	// 1. install dependencies
-	pkg := packager.NPM{}
+	pkg := buildEngines[0]
+	for _, engine := range buildEngines {
+		ok := engine.Detect(cmd.Context(), bctx)
+		if ok {
+			pkg = engine
+			break
+		}
+	}
 	err := pkg.Install(cmd.Context(), bctx)
 	if err != nil {
 		return err
