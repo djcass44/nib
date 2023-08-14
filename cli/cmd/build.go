@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"github.com/djcass44/nib/cli/internal/build"
 	"github.com/djcass44/nib/cli/internal/packager"
@@ -9,6 +10,7 @@ import (
 	"github.com/paketo-buildpacks/packit/chronos"
 	"github.com/paketo-buildpacks/packit/scribe"
 	"github.com/spf13/cobra"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -23,6 +25,8 @@ var buildCmd = &cobra.Command{
 
 func init() {
 	buildCmd.Flags().StringSliceP(flagTag, "t", []string{"latest"}, "Which tags to use for the produced image instead of the default 'latest' tag")
+	buildCmd.Flags().StringSlice(flagBuildPath, pathfinder.DefaultBuildPaths, "Which folders to check for compiled static files")
+	buildCmd.Flags().Bool(flagSkipDotEnv, false, "Skip copying of the .env file")
 }
 
 var buildEngines = []packager.PackageManager{
@@ -36,6 +40,12 @@ func buildExec(cmd *cobra.Command, args []string) error {
 	if cacheDir == "" {
 		cacheDir = filepath.Join(os.TempDir(), ".nib-cache")
 	}
+	buildDirs, _ := cmd.Flags().GetStringSlice(flagBuildPath)
+	if len(buildDirs) == 0 {
+		log.Printf("--build-path list is empty, using default: %v", pathfinder.DefaultBuildPaths)
+		buildDirs = pathfinder.DefaultBuildPaths
+	}
+	skipDotEnv, _ := cmd.Flags().GetBool(flagSkipDotEnv)
 
 	bctx := packager.BuildContext{
 		WorkingDir: workingDir,
@@ -65,9 +75,36 @@ func buildExec(cmd *cobra.Command, args []string) error {
 
 	// 3. figure out where our static files were
 	// just put
-	appPath, err := pathfinder.FindBuildDir(workingDir)
+	appPath, err := pathfinder.FindBuildDir(workingDir, buildDirs)
 	if err != nil {
 		return err
+	}
+
+	// copy the .env file if it exists
+	dotPath := filepath.Join(workingDir, ".env")
+	if !skipDotEnv {
+		if _, err := os.Stat(dotPath); !errors.Is(err, os.ErrNotExist) {
+			log.Printf("detected .env file")
+			outPath := filepath.Join(appPath, ".env")
+			err = func() error {
+				src, err := os.Open(dotPath)
+				if err != nil {
+					return err
+				}
+				defer src.Close()
+				dst, err := os.Create(outPath)
+				if err != nil {
+					return err
+				}
+				defer dst.Close()
+				_, err = dst.ReadFrom(src)
+				return err
+			}()
+			if err != nil {
+				log.Print("failed to copy .env file")
+				return err
+			}
+		}
 	}
 
 	platform, err := v1.ParsePlatform("linux/amd64")

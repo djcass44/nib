@@ -7,12 +7,12 @@ import (
 	"strings"
 )
 
-var commonPaths = []string{
+var DefaultBuildPaths = []string{
 	"dist",
 	"build",
 }
 
-func FindBuildDir(dir string) (string, error) {
+func FindBuildDir(dir string, buildPaths []string) (string, error) {
 	var buildDir string
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if !d.IsDir() {
@@ -21,7 +21,7 @@ func FindBuildDir(dir string) (string, error) {
 		if strings.Contains(path, "node_modules") {
 			return nil
 		}
-		for _, p := range commonPaths {
+		for _, p := range buildPaths {
 			if d.Name() == p {
 				buildDir = path
 				return nil

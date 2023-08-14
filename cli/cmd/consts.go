@@ -6,4 +6,8 @@ const (
 	EnvBaseImage  = "NIB_DEFAULT_BASE_IMAGE"
 )
 
-const flagTag = "tags"
+const (
+	flagTag        = "tags"
+	flagBuildPath  = "build-path"
+	flagSkipDotEnv = "skip-dot-env"
+)
