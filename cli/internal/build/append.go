@@ -3,7 +3,7 @@ package build
 import (
 	"context"
 	"fmt"
-	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/djcass44/ci-tools/pkg/ociutil"
 	"github.com/google/go-containerregistry/pkg/crane"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
@@ -16,7 +16,7 @@ const nibDataPath = "/var/run/nib"
 func Append(ctx context.Context, appPath, baseRef string, platform *v1.Platform) (v1.Image, error) {
 	// pull the base image
 	log.Printf("pulling base image: %s", baseRef)
-	base, err := crane.Pull(baseRef, crane.WithContext(ctx), crane.WithAuthFromKeychain(authn.DefaultKeychain))
+	base, err := crane.Pull(baseRef, crane.WithContext(ctx), crane.WithAuthFromKeychain(ociutil.KeyChain(ociutil.Auth{})))
 	if err != nil {
 		return nil, fmt.Errorf("pulling %s: %w", baseRef, err)
 	}

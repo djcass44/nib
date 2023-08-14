@@ -3,7 +3,7 @@ package build
 import (
 	"context"
 	"fmt"
-	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/djcass44/ci-tools/pkg/ociutil"
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -11,7 +11,7 @@ import (
 
 func Push(ctx context.Context, img v1.Image, dst string) error {
 	// push the image
-	if err := crane.Push(img, dst, crane.WithContext(ctx), crane.WithAuthFromKeychain(authn.DefaultKeychain)); err != nil {
+	if err := crane.Push(img, dst, crane.WithContext(ctx), crane.WithAuthFromKeychain(ociutil.KeyChain(ociutil.Auth{}))); err != nil {
 		return fmt.Errorf("pushing image %s: %w", dst, err)
 	}
 	// parse what we just pushed, so we can show
