@@ -23,9 +23,15 @@ type environment struct {
 	// DataPath defines the location of your applications
 	// static files (required)
 	DataPath string `split_words:"true" required:"true"`
-	// EnvFile is the name of the JS file created
-	// from the DotEnv file
-	EnvFile string `split_words:"true" default:"env-config.js"`
+	Env      struct {
+		// File is the name of the JS file created
+		// from the DotEnv file
+		File string `split_words:"true" default:"env-config.js"`
+		// Dir is the subdirectory to place the File in.
+		// Used to mount an 'emptyDir' volume so that the
+		// container can set 'readOnlyRootFilesystem'
+		Dir string `split_words:"true"`
+	}
 	// Port defines the HTTP port to run on
 	Port int `envconfig:"PORT" default:"8080"`
 }
@@ -58,10 +64,14 @@ func main() {
 		// so that we allow the user to configure it
 		// at runtime
 		envFile := env.GetLast("", func(key string) string {
-			return e.EnvFile
+			return e.Env.File
 		})
 		log.Info("parsing dotenv", "file", dotPath)
-		if err := dotenv.NewReader(ctx, dotPath, filepath.Join(staticDir, envFile)); err != nil {
+		envPath := filepath.Join(staticDir, e.Env.Dir, envFile)
+		if e.Env.Dir == "" {
+			envPath = filepath.Join(staticDir, envFile)
+		}
+		if err := dotenv.NewReader(ctx, dotPath, envPath); err != nil {
 			log.Error(err, "failed to configure - this may cause undefined behaviour", "file", envFile)
 		}
 	}
