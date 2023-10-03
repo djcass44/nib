@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const commandYarn = "yarn"
@@ -22,10 +23,15 @@ func (*Yarn) Detect(_ context.Context, bctx BuildContext) bool {
 func (*Yarn) Install(_ context.Context, bctx BuildContext) error {
 	bctx.Logger.Process("Executing install process")
 
+	var extraArgs []string
+	if val := os.Getenv(EnvExtraArgs); val != "" {
+		extraArgs = strings.Split(val, " ")
+	}
+
 	return exec(bctx, options{
 		extraEnv: []string{fmt.Sprintf("YARN_CACHE_FOLDER=%s", bctx.CacheDir)},
 		command:  commandYarn,
-		args:     []string{"install", "--immutable"},
+		args:     append([]string{"install", "--immutable"}, extraArgs...),
 	})
 }
 

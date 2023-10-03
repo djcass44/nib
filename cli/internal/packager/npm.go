@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const commandNPM = "npm"
@@ -21,10 +22,15 @@ func (*NPM) Detect(_ context.Context, bctx BuildContext) bool {
 func (*NPM) Install(_ context.Context, bctx BuildContext) error {
 	bctx.Logger.Process("Executing install process")
 
+	var extraArgs []string
+	if val := os.Getenv(EnvExtraArgs); val != "" {
+		extraArgs = strings.Split(val, " ")
+	}
+
 	return exec(bctx, options{
 		extraEnv: []string{"NPM_CONFIG_LOGLEVEL=error"},
 		command:  commandNPM,
-		args:     []string{"ci", "--include=dev", "--unsafe-perm", "--cache", bctx.CacheDir},
+		args:     append([]string{"ci", "--include=dev", "--unsafe-perm", "--cache", bctx.CacheDir}, extraArgs...),
 	})
 }
 

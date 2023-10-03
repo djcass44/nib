@@ -6,6 +6,8 @@ import (
 	"github.com/paketo-buildpacks/packit/scribe"
 )
 
+const EnvExtraArgs = "BUILD_EXTRA_ARGS"
+
 type PackageManager interface {
 	Detect(ctx context.Context, bctx BuildContext) bool
 	Install(ctx context.Context, bctx BuildContext) error
