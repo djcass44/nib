@@ -14,7 +14,8 @@ func init() {
 	command.AddCommand(buildCmd)
 }
 
-func Execute() {
+func Execute(version string) {
+	command.Version = version
 	if err := command.Execute(); err != nil {
 		os.Exit(1)
 	}
