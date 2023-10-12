@@ -1,6 +1,6 @@
 module github.com/djcass44/nib/cli
 
-go 1.20
+go 1.21
 
 require (
 	github.com/djcass44/ci-tools v1.6.4

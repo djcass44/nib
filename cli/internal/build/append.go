@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/crane"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
+	"github.com/google/go-containerregistry/pkg/v1/types"
 	"log"
 	"strings"
 )
@@ -21,6 +22,13 @@ func Append(ctx context.Context, appPath, baseRef string, platform *v1.Platform)
 		return nil, fmt.Errorf("pulling %s: %w", baseRef, err)
 	}
 
+	// convert the base image to OCI format
+	if mt, err := base.MediaType(); err == nil {
+		log.Printf("detected base image media type: %s", mt)
+	}
+
+	base = mutate.MediaType(base, types.OCIManifestSchema1)
+
 	// create our new layer
 	log.Printf("containerising directory: %s", appPath)
 	layer, err := NewLayer(appPath, platform)
@@ -31,7 +39,8 @@ func Append(ctx context.Context, appPath, baseRef string, platform *v1.Platform)
 	// append our layer
 	layers := []mutate.Addendum{
 		{
-			Layer: layer,
+			MediaType: types.OCILayer,
+			Layer:     layer,
 			History: v1.History{
 				Author:    "nib",
 				CreatedBy: "nib build",

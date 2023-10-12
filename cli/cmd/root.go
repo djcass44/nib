@@ -6,8 +6,9 @@ import (
 )
 
 var command = &cobra.Command{
-	Use:   "nib",
-	Short: "",
+	Use:          "nib",
+	Short:        "",
+	SilenceUsage: true,
 }
 
 func init() {
