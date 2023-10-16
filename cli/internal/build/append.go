@@ -3,13 +3,13 @@ package build
 import (
 	"context"
 	"fmt"
-	"github.com/djcass44/ci-tools/pkg/ociutil"
-	"github.com/google/go-containerregistry/pkg/crane"
+	"log"
+	"strings"
+
+	"github.com/djcass44/all-your-base/pkg/containerutil"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/types"
-	"log"
-	"strings"
 )
 
 const nibDataPath = "/var/run/nib"
@@ -17,17 +17,11 @@ const nibDataPath = "/var/run/nib"
 func Append(ctx context.Context, appPath, baseRef string, platform *v1.Platform) (v1.Image, error) {
 	// pull the base image
 	log.Printf("pulling base image: %s", baseRef)
-	base, err := crane.Pull(baseRef, crane.WithContext(ctx), crane.WithAuthFromKeychain(ociutil.KeyChain(ociutil.Auth{})))
+
+	base, err := containerutil.Get(ctx, baseRef)
 	if err != nil {
 		return nil, fmt.Errorf("pulling %s: %w", baseRef, err)
 	}
-
-	// convert the base image to OCI format
-	if mt, err := base.MediaType(); err == nil {
-		log.Printf("detected base image media type: %s", mt)
-	}
-
-	base = mutate.MediaType(base, types.OCIManifestSchema1)
 
 	// create our new layer
 	log.Printf("containerising directory: %s", appPath)
