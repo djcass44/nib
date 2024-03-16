@@ -119,7 +119,10 @@ func buildExec(cmd *cobra.Command, args []string) error {
 	if baseImage == "" {
 		baseImage = "ghcr.io/djcass44/nib/srv"
 	}
-	img, err := build.Append(cmd.Context(), appPath, baseImage, platform)
+	img, err := build.Append(cmd.Context(), baseImage, platform, build.LayerPath{
+		Path:   appPath,
+		Chroot: build.DefaultChroot,
+	})
 	if err != nil {
 		return err
 	}

@@ -17,7 +17,7 @@ const (
 	nibAuthor   = "github.com/djcass44/nib"
 )
 
-func Append(ctx context.Context, appPath, baseRef string, platform *v1.Platform) (v1.Image, error) {
+func Append(ctx context.Context, baseRef string, platform *v1.Platform, appPaths ...LayerPath) (v1.Image, error) {
 	// pull the base image
 	log.Printf("pulling base image: %s", baseRef)
 
@@ -26,16 +26,17 @@ func Append(ctx context.Context, appPath, baseRef string, platform *v1.Platform)
 		return nil, fmt.Errorf("pulling %s: %w", baseRef, err)
 	}
 
-	// create our new layer
-	log.Printf("containerising directory: %s", appPath)
-	layer, err := NewLayer(appPath, platform)
-	if err != nil {
-		return nil, err
-	}
+	// create our new layers
+	var layers []mutate.Addendum
+	for i, path := range appPaths {
+		log.Printf("containerising directory %d: %s", i, path)
+		layer, err := NewLayer(path.Path, path.Chroot, platform)
+		if err != nil {
+			return nil, err
+		}
 
-	// append our layer
-	layers := []mutate.Addendum{
-		{
+		// append our layer
+		layers = append(layers, mutate.Addendum{
 			MediaType: types.OCILayer,
 			Layer:     layer,
 			History: v1.History{
@@ -44,7 +45,7 @@ func Append(ctx context.Context, appPath, baseRef string, platform *v1.Platform)
 				Created:   v1.Time{},
 				Comment:   "nibdata contents, at $NIB_DATA_PATH",
 			},
-		},
+		})
 	}
 	withData, err := mutate.Append(base, layers...)
 	if err != nil {

@@ -20,8 +20,10 @@ import (
 // owner: BUILTIN/Users group: BUILTIN/Users ($sddlValue="O:BUG:BU")
 const userOwnerAndGroupSID = "AQAAgBQAAAAkAAAAAAAAAAAAAAABAgAAAAAABSAAAAAhAgAAAQIAAAAAAAUgAAAAIQIAAA=="
 
-func NewLayer(appPath string, platform *v1.Platform) (v1.Layer, error) {
-	layerBuf, err := tarDir(appPath, platform)
+const DefaultChroot = "/var/run/nib"
+
+func NewLayer(appPath, chroot string, platform *v1.Platform) (v1.Layer, error) {
+	layerBuf, err := tarDir(appPath, chroot, platform)
 	if err != nil {
 		return nil, fmt.Errorf("tarring data: %w", err)
 	}
@@ -31,7 +33,7 @@ func NewLayer(appPath string, platform *v1.Platform) (v1.Layer, error) {
 	}, tarball.WithCompressedCaching, tarball.WithMediaType(types.OCILayer))
 }
 
-func tarDir(appPath string, platform *v1.Platform) (*bytes.Buffer, error) {
+func tarDir(appPath, chroot string, platform *v1.Platform) (*bytes.Buffer, error) {
 	buf := bytes.NewBuffer(nil)
 	tw := tar.NewWriter(buf)
 	defer tw.Close()
@@ -55,7 +57,7 @@ func tarDir(appPath string, platform *v1.Platform) (*bytes.Buffer, error) {
 		}
 	}
 
-	if err := walkRecursive(tw, appPath, "/var/run/nib", v1.Time{}, platform); err != nil {
+	if err := walkRecursive(tw, appPath, chroot, v1.Time{}, platform); err != nil {
 		return nil, err
 	}
 	return buf, nil
