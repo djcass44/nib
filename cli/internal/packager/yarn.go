@@ -13,6 +13,8 @@ const lockfileYarn = "yarn.lock"
 
 type Yarn struct{}
 
+// Detect checks to see if the build directory contains
+// a Yarn lock file
 func (*Yarn) Detect(_ context.Context, bctx BuildContext) bool {
 	bctx.Logger.Process("Checking for Yarn lockfile")
 
@@ -20,6 +22,7 @@ func (*Yarn) Detect(_ context.Context, bctx BuildContext) bool {
 	return err == nil
 }
 
+// Install installs packages using Yarn
 func (*Yarn) Install(_ context.Context, bctx BuildContext) error {
 	bctx.Logger.Process("Executing install process")
 
@@ -28,19 +31,20 @@ func (*Yarn) Install(_ context.Context, bctx BuildContext) error {
 		extraArgs = strings.Split(val, " ")
 	}
 
-	return exec(bctx, options{
-		extraEnv: []string{fmt.Sprintf("YARN_CACHE_FOLDER=%s", bctx.CacheDir)},
-		command:  commandYarn,
-		args:     append([]string{"install", "--immutable"}, extraArgs...),
+	return Exec(bctx, Options{
+		ExtraEnv: []string{fmt.Sprintf("YARN_CACHE_FOLDER=%s", bctx.CacheDir)},
+		Command:  commandYarn,
+		Args:     append([]string{"install", "--immutable"}, extraArgs...),
 	})
 }
 
+// Build runs the Yarn build script
 func (*Yarn) Build(_ context.Context, bctx BuildContext) error {
 	bctx.Logger.Process("Executing build process")
 
-	return exec(bctx, options{
-		extraEnv: []string{fmt.Sprintf("YARN_CACHE_FOLDER=%s", bctx.CacheDir)},
-		command:  commandYarn,
-		args:     []string{"run", "build"},
+	return Exec(bctx, Options{
+		ExtraEnv: []string{fmt.Sprintf("YARN_CACHE_FOLDER=%s", bctx.CacheDir)},
+		Command:  commandYarn,
+		Args:     []string{"run", "build"},
 	})
 }

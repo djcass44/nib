@@ -12,7 +12,10 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/types"
 )
 
-const nibDataPath = "/var/run/nib"
+const (
+	nibDataPath = "/var/run/nib"
+	nibAuthor   = "github.com/djcass44/nib"
+)
 
 func Append(ctx context.Context, appPath, baseRef string, platform *v1.Platform) (v1.Image, error) {
 	// pull the base image
@@ -59,7 +62,7 @@ func Append(ctx context.Context, appPath, baseRef string, platform *v1.Platform)
 	} else {
 		cfg.Config.Env = append(cfg.Config.Env, "NIB_DATA_PATH="+nibDataPath)
 	}
-	cfg.Author = "github.com/djcass44/nib"
+	cfg.Author = nibAuthor
 	cfg.Config.WorkingDir = nibDataPath
 	if cfg.Config.Labels == nil {
 		cfg.Config.Labels = map[string]string{}

@@ -12,6 +12,8 @@ const lockfileNPM = "package-lock.json"
 
 type NPM struct{}
 
+// Detect checks to see if the build directory contains
+// an NPM lock file
 func (*NPM) Detect(_ context.Context, bctx BuildContext) bool {
 	bctx.Logger.Process("Checking for NPM lockfile")
 
@@ -19,6 +21,7 @@ func (*NPM) Detect(_ context.Context, bctx BuildContext) bool {
 	return err == nil
 }
 
+// Install installs packages using NPM
 func (*NPM) Install(_ context.Context, bctx BuildContext) error {
 	bctx.Logger.Process("Executing install process")
 
@@ -27,19 +30,20 @@ func (*NPM) Install(_ context.Context, bctx BuildContext) error {
 		extraArgs = strings.Split(val, " ")
 	}
 
-	return exec(bctx, options{
-		extraEnv: []string{"NPM_CONFIG_LOGLEVEL=error"},
-		command:  commandNPM,
-		args:     append([]string{"ci", "--include=dev", "--unsafe-perm", "--cache", bctx.CacheDir}, extraArgs...),
+	return Exec(bctx, Options{
+		ExtraEnv: []string{"NPM_CONFIG_LOGLEVEL=error"},
+		Command:  commandNPM,
+		Args:     append([]string{"ci", "--include=dev", "--unsafe-perm", "--cache", bctx.CacheDir}, extraArgs...),
 	})
 }
 
+// Build runs the NPM build script
 func (*NPM) Build(_ context.Context, bctx BuildContext) error {
 	bctx.Logger.Process("Executing build process")
 
-	return exec(bctx, options{
-		extraEnv: []string{"NPM_CONFIG_LOGLEVEL=error"},
-		command:  commandNPM,
-		args:     []string{"run", "build"},
+	return Exec(bctx, Options{
+		ExtraEnv: []string{"NPM_CONFIG_LOGLEVEL=error"},
+		Command:  commandNPM,
+		Args:     []string{"run", "build"},
 	})
 }
