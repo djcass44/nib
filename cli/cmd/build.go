@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"github.com/djcass44/all-your-base/pkg/containerutil"
 	"github.com/djcass44/nib/cli/internal/build"
 	"github.com/djcass44/nib/cli/internal/packager"
 	"github.com/djcass44/nib/cli/internal/pathfinder"
@@ -123,7 +124,7 @@ func buildExec(cmd *cobra.Command, args []string) error {
 	}
 	tags, _ := cmd.Flags().GetStringSlice(flagTag)
 	for _, tag := range tags {
-		if err := build.Push(cmd.Context(), img, fmt.Sprintf("%s:%s", os.Getenv(EnvDockerRepo), tag)); err != nil {
+		if err := containerutil.Push(cmd.Context(), img, fmt.Sprintf("%s:%s", os.Getenv(EnvDockerRepo), tag)); err != nil {
 			return err
 		}
 	}

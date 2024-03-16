@@ -1,6 +1,7 @@
 package pathfinder
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"path/filepath"
@@ -16,6 +17,8 @@ var DefaultBuildPaths = []string{
 var IgnoredFilePaths = []string{
 	"node_modules",
 }
+
+var ErrDirNotFound = errors.New("build directory could not be found")
 
 // FindBuildDir attempts to locate the directory containing packaged static files.
 // Generally this is in the DefaultBuildPaths list, however custom build frameworks
@@ -43,5 +46,8 @@ func FindBuildDir(dir string, buildPaths []string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("walking dir %s: %w", dir, err)
 	}
-	return buildDir, nil
+	if buildDir != "" {
+		return buildDir, nil
+	}
+	return "", ErrDirNotFound
 }
