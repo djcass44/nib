@@ -12,10 +12,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/types"
 )
 
-const (
-	nibDataPath = "/var/run/nib"
-	nibAuthor   = "github.com/djcass44/nib"
-)
+const nibAuthor = "github.com/djcass44/nib"
 
 func Append(ctx context.Context, baseRef string, platform *v1.Platform, appPaths ...LayerPath) (v1.Image, error) {
 	// pull the base image
@@ -43,7 +40,7 @@ func Append(ctx context.Context, baseRef string, platform *v1.Platform, appPaths
 				Author:    "nib",
 				CreatedBy: "nib build",
 				Created:   v1.Time{},
-				Comment:   "nibdata contents, at $NIB_DATA_PATH",
+				Comment:   fmt.Sprintf("nibdata contents, at %s", path.Chroot),
 			},
 		})
 	}
@@ -59,12 +56,12 @@ func Append(ctx context.Context, baseRef string, platform *v1.Platform, appPaths
 	}
 	cfg = cfg.DeepCopy()
 	if platform.OS == "windows" {
-		cfg.Config.Env = append(cfg.Config.Env, "NIB_DATA_PATH=C:"+strings.ReplaceAll(nibDataPath, "/", `\`))
+		cfg.Config.Env = append(cfg.Config.Env, "NIB_DATA_PATH=C:"+strings.ReplaceAll(DefaultChroot, "/", `\`))
 	} else {
-		cfg.Config.Env = append(cfg.Config.Env, "NIB_DATA_PATH="+nibDataPath)
+		cfg.Config.Env = append(cfg.Config.Env, "NIB_DATA_PATH="+DefaultChroot)
 	}
 	cfg.Author = nibAuthor
-	cfg.Config.WorkingDir = nibDataPath
+	cfg.Config.WorkingDir = DefaultChroot
 	if cfg.Config.Labels == nil {
 		cfg.Config.Labels = map[string]string{}
 	}
