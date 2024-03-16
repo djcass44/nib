@@ -12,9 +12,19 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/types"
 )
 
-const nibAuthor = "github.com/djcass44/nib"
+const (
+	NibAuthor   = "github.com/djcass44/nib"
+	NibDataPath = "NIB_DATA_PATH"
+)
 
-func Append(ctx context.Context, baseRef string, platform *v1.Platform, appPaths ...LayerPath) (v1.Image, error) {
+type Options struct {
+	Author      string
+	ExtraEnv    []string
+	Platform    *v1.Platform
+	EnvDataPath string
+}
+
+func Append(ctx context.Context, baseRef string, options Options, appPaths ...LayerPath) (v1.Image, error) {
 	// pull the base image
 	log.Printf("pulling base image: %s", baseRef)
 
@@ -27,7 +37,7 @@ func Append(ctx context.Context, baseRef string, platform *v1.Platform, appPaths
 	var layers []mutate.Addendum
 	for i, path := range appPaths {
 		log.Printf("containerising directory %d: %s", i, path)
-		layer, err := NewLayer(path.Path, path.Chroot, platform)
+		layer, err := NewLayer(path.Path, path.Chroot, options.Platform)
 		if err != nil {
 			return nil, err
 		}
@@ -55,12 +65,15 @@ func Append(ctx context.Context, baseRef string, platform *v1.Platform, appPaths
 		return nil, err
 	}
 	cfg = cfg.DeepCopy()
-	if platform.OS == "windows" {
-		cfg.Config.Env = append(cfg.Config.Env, "NIB_DATA_PATH=C:"+strings.ReplaceAll(DefaultChroot, "/", `\`))
+	if options.Platform.OS == "windows" {
+		cfg.Config.Env = append(cfg.Config.Env, fmt.Sprintf("%s=C:%s", options.EnvDataPath, strings.ReplaceAll(DefaultChroot, "/", `\`)))
 	} else {
-		cfg.Config.Env = append(cfg.Config.Env, "NIB_DATA_PATH="+DefaultChroot)
+		cfg.Config.Env = append(cfg.Config.Env, fmt.Sprintf("%s=%s", options.EnvDataPath, DefaultChroot))
 	}
-	cfg.Author = nibAuthor
+	if options.ExtraEnv != nil {
+		cfg.Config.Env = append(cfg.Config.Env, options.ExtraEnv...)
+	}
+	cfg.Author = options.Author
 	cfg.Config.WorkingDir = DefaultChroot
 	if cfg.Config.Labels == nil {
 		cfg.Config.Labels = map[string]string{}
