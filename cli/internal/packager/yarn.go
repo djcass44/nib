@@ -3,6 +3,7 @@ package packager
 import (
 	"context"
 	"fmt"
+	"github.com/djcass44/nib/cli/pkg/executor"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,7 +16,7 @@ type Yarn struct{}
 
 // Detect checks to see if the build directory contains
 // a Yarn lock file
-func (*Yarn) Detect(_ context.Context, bctx BuildContext) bool {
+func (*Yarn) Detect(_ context.Context, bctx executor.BuildContext) bool {
 	bctx.Logger.Process("Checking for Yarn lockfile")
 
 	_, err := os.Stat(filepath.Join(bctx.WorkingDir, lockfileYarn))
@@ -23,15 +24,15 @@ func (*Yarn) Detect(_ context.Context, bctx BuildContext) bool {
 }
 
 // Install installs packages using Yarn
-func (*Yarn) Install(_ context.Context, bctx BuildContext) error {
+func (*Yarn) Install(_ context.Context, bctx executor.BuildContext) error {
 	bctx.Logger.Process("Executing install process")
 
 	var extraArgs []string
-	if val := os.Getenv(EnvExtraArgs); val != "" {
+	if val := os.Getenv(executor.EnvExtraArgs); val != "" {
 		extraArgs = strings.Split(val, " ")
 	}
 
-	return Exec(bctx, Options{
+	return executor.Exec(bctx, executor.Options{
 		ExtraEnv: []string{fmt.Sprintf("YARN_CACHE_FOLDER=%s", bctx.CacheDir)},
 		Command:  commandYarn,
 		Args:     append([]string{"install", "--immutable"}, extraArgs...),
@@ -39,10 +40,10 @@ func (*Yarn) Install(_ context.Context, bctx BuildContext) error {
 }
 
 // Build runs the Yarn build script
-func (*Yarn) Build(_ context.Context, bctx BuildContext) error {
+func (*Yarn) Build(_ context.Context, bctx executor.BuildContext) error {
 	bctx.Logger.Process("Executing build process")
 
-	return Exec(bctx, Options{
+	return executor.Exec(bctx, executor.Options{
 		ExtraEnv: []string{fmt.Sprintf("YARN_CACHE_FOLDER=%s", bctx.CacheDir)},
 		Command:  commandYarn,
 		Args:     []string{"run", "build"},

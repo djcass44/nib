@@ -4,9 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/djcass44/all-your-base/pkg/containerutil"
-	"github.com/djcass44/nib/cli/internal/build"
 	"github.com/djcass44/nib/cli/internal/packager"
 	"github.com/djcass44/nib/cli/internal/pathfinder"
+	"github.com/djcass44/nib/cli/pkg/build"
+	"github.com/djcass44/nib/cli/pkg/executor"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/paketo-buildpacks/packit/chronos"
 	"github.com/paketo-buildpacks/packit/scribe"
@@ -30,7 +31,7 @@ func init() {
 	buildCmd.Flags().Bool(flagSkipDotEnv, false, "Skip copying of the .env file")
 }
 
-var buildEngines = []packager.PackageManager{
+var buildEngines = []executor.PackageManager{
 	&packager.NPM{},
 	&packager.Yarn{},
 }
@@ -48,7 +49,7 @@ func buildExec(cmd *cobra.Command, args []string) error {
 	}
 	skipDotEnv, _ := cmd.Flags().GetBool(flagSkipDotEnv)
 
-	bctx := packager.BuildContext{
+	bctx := executor.BuildContext{
 		WorkingDir: workingDir,
 		CacheDir:   cacheDir,
 		Clock:      chronos.DefaultClock,
