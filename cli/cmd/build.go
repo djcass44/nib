@@ -1,11 +1,11 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"github.com/Snakdy/container-build-engine/pkg/builder"
 	"github.com/Snakdy/container-build-engine/pkg/containers"
 	"github.com/Snakdy/container-build-engine/pkg/pipelines"
+	"github.com/djcass44/nib/cli/internal/dotenv"
 	"github.com/djcass44/nib/cli/internal/packager"
 	"github.com/djcass44/nib/cli/internal/pathfinder"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -57,33 +57,7 @@ func buildExec(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-
-	// copy the .env file if it exists
-	dotPath := filepath.Join(workingDir, ".env")
-	if !skipDotEnv {
-		if _, err := os.Stat(dotPath); !errors.Is(err, os.ErrNotExist) {
-			log.Printf("detected .env file")
-			outPath := filepath.Join(appPath, ".env")
-			err = func() error {
-				src, err := os.Open(dotPath)
-				if err != nil {
-					return err
-				}
-				defer src.Close()
-				dst, err := os.Create(outPath)
-				if err != nil {
-					return err
-				}
-				defer dst.Close()
-				_, err = dst.ReadFrom(src)
-				return err
-			}()
-			if err != nil {
-				log.Print("failed to copy .env file")
-				return err
-			}
-		}
-	}
+	dataPath := "${NIB_DATA_PATH:-/var/run/nib}"
 
 	statements := []pipelines.OrderedPipelineStatement{
 		{
@@ -107,16 +81,25 @@ func buildExec(cmd *cobra.Command, args []string) error {
 			ID: "copy-build-dir",
 			Options: map[string]any{
 				"src": appPath,
-				"dst": "${NIB_DATA_PATH:-/var/run/nib}",
+				"dst": dataPath,
 			},
 			Statement: &pipelines.Dir{},
+			DependsOn: []string{packager.StatementNodePackage},
+		},
+		{
+			ID: dotenv.StatementDotenv,
+			Options: map[string]any{
+				"skip": skipDotEnv,
+				"path": dataPath,
+			},
+			Statement: &dotenv.Dotenv{},
 			DependsOn: []string{packager.StatementNodePackage},
 		},
 		{
 			ID: "set-runtime-env",
 			Options: map[string]any{
 				"PATH":          "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/somebody/.local/bin:/home/somebody/bin:/ko-app",
-				"NIB_DATA_PATH": "${NIB_DATA_PATH:-/var/run/nib}",
+				"NIB_DATA_PATH": dataPath,
 			},
 			Statement: &pipelines.Env{},
 			DependsOn: []string{"copy-build-dir"},
