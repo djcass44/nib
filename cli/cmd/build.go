@@ -3,14 +3,12 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/djcass44/all-your-base/pkg/containerutil"
+	"github.com/Snakdy/container-build-engine/pkg/builder"
+	"github.com/Snakdy/container-build-engine/pkg/containers"
+	"github.com/Snakdy/container-build-engine/pkg/pipelines"
 	"github.com/djcass44/nib/cli/internal/packager"
 	"github.com/djcass44/nib/cli/internal/pathfinder"
-	"github.com/djcass44/nib/cli/pkg/build"
-	"github.com/djcass44/nib/cli/pkg/executor"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/paketo-buildpacks/packit/chronos"
-	"github.com/paketo-buildpacks/packit/scribe"
 	"github.com/spf13/cobra"
 	"log"
 	"os"
@@ -29,15 +27,13 @@ func init() {
 	buildCmd.Flags().StringSliceP(flagTag, "t", []string{"latest"}, "Which tags to use for the produced image instead of the default 'latest' tag")
 	buildCmd.Flags().StringSlice(flagBuildPath, pathfinder.DefaultBuildPaths, "Which folders to check for compiled static files")
 	buildCmd.Flags().Bool(flagSkipDotEnv, false, "Skip copying of the .env file")
-}
-
-var buildEngines = []executor.PackageManager{
-	&packager.NPM{},
-	&packager.Yarn{},
+	buildCmd.Flags().String(flagPlatform, "linux/amd64", "build platform")
+	buildCmd.Flags().String(flagSave, "", "path to save the image as a tar archive")
 }
 
 func buildExec(cmd *cobra.Command, args []string) error {
 	workingDir := args[0]
+	localPath, _ := cmd.Flags().GetString(flagSave)
 	cacheDir := os.Getenv(EnvCache)
 	if cacheDir == "" {
 		cacheDir = filepath.Join(os.TempDir(), ".nib-cache")
@@ -49,28 +45,8 @@ func buildExec(cmd *cobra.Command, args []string) error {
 	}
 	skipDotEnv, _ := cmd.Flags().GetBool(flagSkipDotEnv)
 
-	bctx := executor.BuildContext{
-		WorkingDir: workingDir,
-		CacheDir:   cacheDir,
-		Clock:      chronos.DefaultClock,
-		Logger:     scribe.NewLogger(os.Stdout),
-	}
-	// 1. install dependencies
-	pkg := buildEngines[0]
-	for _, engine := range buildEngines {
-		ok := engine.Detect(cmd.Context(), bctx)
-		if ok {
-			pkg = engine
-			break
-		}
-	}
-	err := pkg.Install(cmd.Context(), bctx)
-	if err != nil {
-		return err
-	}
-
-	// 2. build
-	err = pkg.Build(cmd.Context(), bctx)
+	platform, _ := cmd.Flags().GetString(flagPlatform)
+	imgPlatform, err := v1.ParsePlatform(platform)
 	if err != nil {
 		return err
 	}
@@ -109,9 +85,42 @@ func buildExec(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	platform, err := v1.ParsePlatform("linux/amd64")
-	if err != nil {
-		return err
+	statements := []pipelines.OrderedPipelineStatement{
+		{
+			ID: "set-env",
+			Options: map[string]any{
+				"NPM_CONFIG_LOGLEVEL": "error",
+				"YARN_CACHE_FOLDER":   cacheDir,
+				"PATH":                os.Getenv("PATH"),
+			},
+			Statement: &pipelines.Env{},
+		},
+		{
+			ID: packager.StatementNodePackage,
+			Options: map[string]any{
+				"cache-dir": cacheDir,
+			},
+			Statement: &packager.NodePackager{},
+			DependsOn: []string{"set-env"},
+		},
+		{
+			ID: "copy-build-dir",
+			Options: map[string]any{
+				"src": appPath,
+				"dst": "${NIB_DATA_PATH:-/var/run/nib}",
+			},
+			Statement: &pipelines.Dir{},
+			DependsOn: []string{packager.StatementNodePackage},
+		},
+		{
+			ID: "set-runtime-env",
+			Options: map[string]any{
+				"PATH":          "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/somebody/.local/bin:/home/somebody/bin:/ko-app",
+				"NIB_DATA_PATH": "${NIB_DATA_PATH:-/var/run/nib}",
+			},
+			Statement: &pipelines.Env{},
+			DependsOn: []string{"copy-build-dir"},
+		},
 	}
 
 	// 4. add static files to base image
@@ -119,21 +128,25 @@ func buildExec(cmd *cobra.Command, args []string) error {
 	if baseImage == "" {
 		baseImage = "ghcr.io/djcass44/nib/srv"
 	}
-	options := build.Options{
-		Author:      build.NibAuthor,
-		EnvDataPath: build.NibDataPath,
-		Platform:    platform,
-	}
-	img, err := build.Append(cmd.Context(), baseImage, options, build.LayerPath{
-		Path:   appPath,
-		Chroot: build.DefaultChroot,
+	b, err := builder.NewBuilder(cmd.Context(), baseImage, statements, builder.Options{
+		WorkingDir: workingDir,
+		Metadata: builder.MetadataOptions{
+			CreatedBy: "nib",
+		},
 	})
 	if err != nil {
 		return err
 	}
+	img, err := b.Build(cmd.Context(), imgPlatform)
+	if err != nil {
+		return err
+	}
+	if localPath != "" {
+		return containers.Save(cmd.Context(), img, "image", localPath)
+	}
 	tags, _ := cmd.Flags().GetStringSlice(flagTag)
 	for _, tag := range tags {
-		if err := containerutil.Push(cmd.Context(), img, fmt.Sprintf("%s:%s", os.Getenv(EnvDockerRepo), tag)); err != nil {
+		if err := containers.Push(cmd.Context(), img, fmt.Sprintf("%s:%s", os.Getenv(EnvDockerRepo), tag)); err != nil {
 			return err
 		}
 	}

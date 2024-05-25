@@ -10,4 +10,6 @@ const (
 	flagTag        = "tags"
 	flagBuildPath  = "build-path"
 	flagSkipDotEnv = "skip-dot-env"
+	flagPlatform   = "platform"
+	flagSave       = "save"
 )

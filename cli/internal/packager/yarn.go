@@ -1,9 +1,8 @@
 package packager
 
 import (
-	"context"
-	"fmt"
 	"github.com/djcass44/nib/cli/pkg/executor"
+	"github.com/go-logr/logr"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,36 +15,37 @@ type Yarn struct{}
 
 // Detect checks to see if the build directory contains
 // a Yarn lock file
-func (*Yarn) Detect(_ context.Context, bctx executor.BuildContext) bool {
-	bctx.Logger.Process("Checking for Yarn lockfile")
+func (*Yarn) Detect(ctx executor.BuildContext) bool {
+	log := logr.FromContextOrDiscard(ctx.Ctx.Context)
+	log.Info("checking for Yarn lockfile")
 
-	_, err := os.Stat(filepath.Join(bctx.WorkingDir, lockfileYarn))
+	_, err := os.Stat(filepath.Join(ctx.Ctx.WorkingDirectory, lockfileYarn))
 	return err == nil
 }
 
 // Install installs packages using Yarn
-func (*Yarn) Install(_ context.Context, bctx executor.BuildContext) error {
-	bctx.Logger.Process("Executing install process")
+func (*Yarn) Install(ctx executor.BuildContext) error {
+	log := logr.FromContextOrDiscard(ctx.Ctx.Context)
+	log.Info("executing install process")
 
 	var extraArgs []string
 	if val := os.Getenv(executor.EnvExtraArgs); val != "" {
 		extraArgs = strings.Split(val, " ")
 	}
 
-	return executor.Exec(bctx, executor.Options{
-		ExtraEnv: []string{fmt.Sprintf("YARN_CACHE_FOLDER=%s", bctx.CacheDir)},
-		Command:  commandYarn,
-		Args:     append([]string{"install", "--immutable"}, extraArgs...),
+	return executor.Exec(ctx, executor.Options{
+		Command: commandYarn,
+		Args:    append([]string{"install", "--immutable"}, extraArgs...),
 	})
 }
 
 // Build runs the Yarn build script
-func (*Yarn) Build(_ context.Context, bctx executor.BuildContext) error {
-	bctx.Logger.Process("Executing build process")
+func (*Yarn) Build(ctx executor.BuildContext) error {
+	log := logr.FromContextOrDiscard(ctx.Ctx.Context)
+	log.Info("executing build process")
 
-	return executor.Exec(bctx, executor.Options{
-		ExtraEnv: []string{fmt.Sprintf("YARN_CACHE_FOLDER=%s", bctx.CacheDir)},
-		Command:  commandYarn,
-		Args:     []string{"run", "build"},
+	return executor.Exec(ctx, executor.Options{
+		Command: commandYarn,
+		Args:    []string{"run", "build"},
 	})
 }

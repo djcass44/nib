@@ -2,40 +2,33 @@ package executor
 
 import (
 	"fmt"
+	"github.com/go-logr/logr"
 	"github.com/paketo-buildpacks/packit/pexec"
-	"os"
-	"strings"
 	"time"
 )
 
 type Options struct {
-	Command  string
-	Args     []string
-	ExtraEnv []string
+	Command string
+	Args    []string
 }
 
 // Exec runs an external process
 func Exec(ctx BuildContext, opts Options) error {
+	log := logr.FromContextOrDiscard(ctx.Ctx.Context)
+
 	// assemble the information our executable needs
 	executor := pexec.NewExecutable(opts.Command)
-	ctx.Logger.Subprocess("Running '%s %s'", opts.Command, strings.Join(opts.Args, " "))
+	log.Info("running executable process", "command", opts.Command, "args", opts.Args)
 	// shell out
-	duration, err := ctx.Clock.Measure(func() error {
-		return executor.Execute(pexec.Execution{
-			Args: opts.Args,
-			Dir:  ctx.WorkingDir,
-			Env: append(
-				os.Environ(),
-				opts.ExtraEnv...,
-			),
-			Stdout: os.Stdout,
-			Stderr: os.Stderr,
-		})
+	start := time.Now()
+	err := executor.Execute(pexec.Execution{
+		Args: opts.Args,
+		Dir:  ctx.Ctx.WorkingDirectory,
+		Env:  ctx.Ctx.ConfigFile.Config.Env,
 	})
 	if err != nil {
 		return fmt.Errorf("%s failed: %w", opts.Command, err)
 	}
-	ctx.Logger.Action("Completed in %s", duration.Round(time.Millisecond))
-	ctx.Logger.Break()
+	log.Info("completed execution", "duration", time.Since(start))
 	return nil
 }

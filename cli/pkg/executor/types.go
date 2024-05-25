@@ -1,23 +1,19 @@
 package executor
 
 import (
-	"context"
-	"github.com/paketo-buildpacks/packit/chronos"
-	"github.com/paketo-buildpacks/packit/scribe"
+	"github.com/Snakdy/container-build-engine/pkg/pipelines"
 )
 
 const EnvExtraArgs = "BUILD_EXTRA_ARGS"
 
 type PackageManager interface {
-	Detect(ctx context.Context, bctx BuildContext) bool
-	Install(ctx context.Context, bctx BuildContext) error
-	Build(ctx context.Context, bctx BuildContext) error
+	Detect(ctx BuildContext) bool
+	Install(ctx BuildContext) error
+	Build(ctx BuildContext) error
 }
 
+// Deprecated
 type BuildContext struct {
-	WorkingDir string
-	CacheDir   string
-
-	Clock  chronos.Clock
-	Logger scribe.Logger
+	CacheDir string
+	Ctx      pipelines.BuildContext
 }
