@@ -11,7 +11,13 @@ import (
 const commandNPM = "npm"
 const lockfileNPM = "package-lock.json"
 
-type NPM struct{}
+func NewNPM(command string) *NPM {
+	return &NPM{command: command}
+}
+
+type NPM struct {
+	command string
+}
 
 // Detect checks to see if the build directory contains
 // an NPM lock file
@@ -24,7 +30,7 @@ func (*NPM) Detect(ctx executor.BuildContext) bool {
 }
 
 // Install installs packages using NPM
-func (*NPM) Install(ctx executor.BuildContext) error {
+func (n *NPM) Install(ctx executor.BuildContext) error {
 	log := logr.FromContextOrDiscard(ctx.Ctx.Context)
 	log.Info("executing install process")
 
@@ -34,18 +40,18 @@ func (*NPM) Install(ctx executor.BuildContext) error {
 	}
 
 	return executor.Exec(ctx, executor.Options{
-		Command: commandNPM,
+		Command: n.command,
 		Args:    append([]string{"ci", "--include=dev", "--unsafe-perm", "--cache", ctx.CacheDir}, extraArgs...),
 	})
 }
 
 // Build runs the NPM build script
-func (*NPM) Build(ctx executor.BuildContext) error {
+func (n *NPM) Build(ctx executor.BuildContext) error {
 	log := logr.FromContextOrDiscard(ctx.Ctx.Context)
 	log.Info("executing build process")
 
 	return executor.Exec(ctx, executor.Options{
-		Command: commandNPM,
+		Command: n.command,
 		Args:    []string{"run", "build"},
 	})
 }

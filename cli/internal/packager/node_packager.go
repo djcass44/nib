@@ -11,7 +11,7 @@ import (
 const StatementNodePackage = "node-package"
 
 var buildEngines = []executor.PackageManager{
-	&NPM{},
+	NewNPM(commandNPM),
 	&Yarn{},
 }
 
@@ -19,13 +19,13 @@ type NodePackager struct {
 	options cbev1.Options
 }
 
-func (p *NodePackager) Run(ctx *pipelines.BuildContext) error {
+func (p *NodePackager) Run(ctx *pipelines.BuildContext, _ ...cbev1.Options) (cbev1.Options, error) {
 	log := logr.FromContextOrDiscard(ctx.Context)
 	log.V(7).Info("running statement node package", "options", p.options)
 
 	cacheDir, err := cbev1.GetRequired[string](p.options, "cache-dir")
 	if err != nil {
-		return err
+		return cbev1.Options{}, err
 	}
 
 	buildContext := executor.BuildContext{
@@ -45,15 +45,15 @@ func (p *NodePackager) Run(ctx *pipelines.BuildContext) error {
 	// 1. install
 	err = pkg.Install(buildContext)
 	if err != nil {
-		return err
+		return cbev1.Options{}, err
 	}
 
 	// 2. build
 	err = pkg.Build(buildContext)
 	if err != nil {
-		return err
+		return cbev1.Options{}, err
 	}
-	return nil
+	return cbev1.Options{}, nil
 }
 
 func (p *NodePackager) Name() string {

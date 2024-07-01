@@ -18,22 +18,22 @@ type Dotenv struct {
 	options cbev1.Options
 }
 
-func (p *Dotenv) Run(ctx *pipelines.BuildContext) error {
+func (p *Dotenv) Run(ctx *pipelines.BuildContext, _ ...cbev1.Options) (cbev1.Options, error) {
 	log := logr.FromContextOrDiscard(ctx.Context)
 	log.Info("running dotenv statement", "options", p.options)
 
 	skip, err := cbev1.GetOptional[bool](p.options, "skip")
 	if err != nil {
-		return err
+		return cbev1.Options{}, err
 	}
 	path, err := cbev1.GetRequired[string](p.options, "path")
 	if err != nil {
-		return err
+		return cbev1.Options{}, err
 	}
 
 	if skip {
 		log.V(5).Info("skipping dotenv generation")
-		return nil
+		return cbev1.Options{}, nil
 	}
 
 	path = filepath.Clean(envs.ExpandEnvFunc(path, pipelines.ExpandList(ctx.ConfigFile.Config.Env)))
@@ -63,11 +63,11 @@ func (p *Dotenv) Run(ctx *pipelines.BuildContext) error {
 		}()
 		if err != nil {
 			log.Error(err, "failed to copy .env file")
-			return err
+			return cbev1.Options{}, err
 		}
 	}
 
-	return nil
+	return cbev1.Options{}, nil
 }
 
 func (p *Dotenv) Name() string {

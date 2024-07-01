@@ -50,13 +50,6 @@ func buildExec(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-
-	// 3. figure out where our static files were
-	// just put
-	appPath, err := pathfinder.FindBuildDir(workingDir, buildDirs)
-	if err != nil {
-		return err
-	}
 	dataPath := "${NIB_DATA_PATH:-/var/run/nib}"
 
 	statements := []pipelines.OrderedPipelineStatement{
@@ -78,13 +71,23 @@ func buildExec(cmd *cobra.Command, args []string) error {
 			DependsOn: []string{"set-env"},
 		},
 		{
+			ID: pathfinder.StatementPathfinder,
+			Options: map[string]any{
+				"build-dirs": buildDirs,
+			},
+			Statement: &pathfinder.Pathfinder{},
+			DependsOn: []string{packager.StatementNodePackage},
+		},
+		{
 			ID: "copy-build-dir",
 			Options: map[string]any{
-				"src": appPath,
 				"dst": dataPath,
 			},
 			Statement: &pipelines.Dir{},
-			DependsOn: []string{packager.StatementNodePackage},
+			DependsOn: []string{
+				packager.StatementNodePackage,
+				pathfinder.StatementPathfinder,
+			},
 		},
 		{
 			ID: dotenv.StatementDotenv,
@@ -93,7 +96,7 @@ func buildExec(cmd *cobra.Command, args []string) error {
 				"path": dataPath,
 			},
 			Statement: &dotenv.Dotenv{},
-			DependsOn: []string{packager.StatementNodePackage},
+			DependsOn: []string{packager.StatementNodePackage, "copy-build-dir"},
 		},
 		{
 			ID: "set-runtime-env",
