@@ -43,7 +43,7 @@ func main() {
 
 	zc := zap.NewProductionConfig()
 	zc.Level = zap.NewAtomicLevelAt(zapcore.Level(e.LogLevel * -1))
-	log, ctx := logging.NewZap(context.TODO(), zc)
+	log, ctx := logging.NewZap(context.Background(), zc)
 
 	// static dir must be the first set value
 	// so that we serve what was set at build
