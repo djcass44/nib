@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/go-logr/logr"
 	"github.com/paketo-buildpacks/packit/pexec"
+	"os"
 	"time"
 )
 
@@ -22,9 +23,11 @@ func Exec(ctx BuildContext, opts Options) error {
 	// shell out
 	start := time.Now()
 	err := executor.Execute(pexec.Execution{
-		Args: opts.Args,
-		Dir:  ctx.Ctx.WorkingDirectory,
-		Env:  ctx.Ctx.ConfigFile.Config.Env,
+		Args:   opts.Args,
+		Dir:    ctx.Ctx.WorkingDirectory,
+		Env:    ctx.Ctx.ConfigFile.Config.Env,
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
 	})
 	if err != nil {
 		return fmt.Errorf("%s failed: %w", opts.Command, err)
