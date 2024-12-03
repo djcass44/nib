@@ -4,7 +4,7 @@ import (
 	"github.com/Snakdy/container-build-engine/pkg/pipelines"
 )
 
-const EnvExtraArgs = "BUILD_EXTRA_ARGS"
+const EnvExtraArgs = "BUILD_TOOL_EXTRA_ARGS"
 
 type PackageManager interface {
 	Detect(ctx BuildContext) bool
